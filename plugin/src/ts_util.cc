@@ -1,7 +1,7 @@
 /** @file
    Traffic Server plugin API utilities.
 
- * Copyright 2019, Oath Inc.
+ * Copyright 2019, Oath Inc., 2021 LinkedIn
  * SPDX-License-Identifier: Apache-2.0
 */
 
@@ -13,13 +13,12 @@
 #include <openssl/ssl.h>
 
 #include <swoc/TextView.h>
-#include <swoc/swoc_file.h>
-#include <swoc/bwf_std.h>
+#include <swoc/Lexicon.h>
+#include <swoc/Errata.h>
 #include <swoc/bwf_ex.h>
-#include <swoc/ArenaWriter.h>
 #include <swoc/swoc_meta.h>
 
-#include "txn_box/ts_util.h"
+#include "ts_util.h"
 
 using swoc::TextView;
 using swoc::MemArena;
@@ -49,6 +48,15 @@ const swoc::Lexicon<TSRecordDataType> TSRecordDataTypeNames{{{TS_RECORDDATATYPE_
 HttpTxn::TxnConfigVarTable ts::HttpTxn::_var_table;
 std::mutex HttpTxn::_var_table_lock;
 int HttpTxn::_arg_idx = -1;
+
+static std::array<swoc::TextView, 6> S_NAMES = { "Diag", "Debug", "Status", "Note", "Warning", "Error"};
+
+const bool ERRATA_SEVERITY_INIT = []() -> bool {
+  swoc::Errata::SEVERITY_NAMES = swoc::MemSpan<swoc::TextView const>{S_NAMES.data(), S_NAMES.size()};
+  swoc::Errata::DEFAULT_SEVERITY = S_ERROR;
+  swoc::Errata::FAILURE_SEVERITY = S_ERROR;
+  return true;
+}();
 
 /* ------------------------------------------------------------------------------------ */
 // API changes.
@@ -878,12 +886,6 @@ HttpSsn::protocol_stack(MemSpan<const char *> tags) const
   return n;
 }
 
-Errata &
-HttpTxn::init(swoc::Errata &errata)
-{
-  return errata;
-}
-
 // ----
 
 int
@@ -1186,14 +1188,5 @@ bwformat(BufferWriter &w, bwf::Spec const &spec, ts::ConfVarData const &data)
   return w;
 }
 } // namespace swoc
-
-/* ------------------------------------------------------------------------------------ */
-namespace
-{
-[[maybe_unused]] bool INITIALIZED = []() -> bool {
-  ts::HttpTxn::init(G._preload_errata);
-  return true;
-}();
-} // namespace
 
 /* ------------------------------------------------------------------------------------ */

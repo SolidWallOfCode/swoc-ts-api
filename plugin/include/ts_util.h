@@ -11,25 +11,25 @@
 #include <type_traits>
 #include <variant>
 
-#include "txn_box/common.h"
 #include <swoc/swoc_file.h>
 #include <swoc/MemArena.h>
+#include <swoc/BufferWriter.h>
+#include <swoc/Errata.h>
+#include <swoc/Lexicon.h>
+#include <swoc/swoc_ip.h>
 
 #include <ts/ts.h>
 
-/** Convert a TS hook ID to the local TxB enum.
- *
- * @param ev TS C API event value.
- * @return The corresponding TxB hook enum value, or @c Hook::INVALID if not a supported hook.
- */
-Hook Convert_TS_Event_To_TxB_Hook(TSEvent ev);
-
-/// Convert TxB hook value to TS hook value.
-/// TxB values are compact so an array works fine.
-extern std::array<TSHttpHookID, std::tuple_size<Hook>::value> TS_Hook;
-
 namespace ts
 {
+
+constexpr swoc::Errata::Severity S_DIAG{0};
+constexpr swoc::Errata::Severity S_DEBUG{1};
+constexpr swoc::Errata::Severity S_STATUS{2};
+constexpr swoc::Errata::Severity S_NOTE{3};
+constexpr swoc::Errata::Severity S_WARNING{4};
+constexpr swoc::Errata::Severity S_ERROR{5};
+
 class SSLContext;
 
 template <typename... Args>
@@ -698,13 +698,6 @@ public:
   void arg_assign(int idx, void *value);
 
   static swoc::Rv<int> reserve_arg(swoc::TextView const &name, swoc::TextView const &description);
-
-  /** Perform DSO load time intialization.
-   *
-   * @param errata Current errors.
-   * @return @a errata, updated with any additional errors.
-   */
-  static swoc::Errata &init(swoc::Errata &errata);
 
   /** Gets the number of transactions between the Traffic Server proxy and the
    *  origin server from a single session. Any value greater than zero indicates connection reuse.

@@ -12,6 +12,9 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(libSWOC)
 
+add_library(ts INTERFACE IMPORTED)
+target_include_directories(ts INTERFACE "/home/amc/opt/ts.10/include")
+
 add_library(${PROJECT_NAME} SHARED plugin/src/id_check.cc plugin/src/ts_util.cc)
-#target_include_directories(${PROJECT_NAME} PRIVATE plugin/include)
-target_link_libraries(${PROJECT_NAME} libswoc)
+target_include_directories(${PROJECT_NAME} PRIVATE plugin/include)
+target_link_libraries(${PROJECT_NAME} libswoc ts)
